@@ -1,8 +1,11 @@
 using ApiProject.WebAPI.Context;
+using ApiProject.WebAPI.Dtos.ProductDtos;
 using ApiProject.WebAPI.Entities;
+using AutoMapper;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ApiProject.WebAPI.Controllers
 {
@@ -12,10 +15,12 @@ namespace ApiProject.WebAPI.Controllers
     {
         private readonly IValidator<Product> _productValidator;
         private readonly APIContext _context;
-        public ProductController(IValidator<Product> productValidator, APIContext context)
+        private readonly IMapper _mapper;
+        public ProductController(IValidator<Product> productValidator, APIContext context, IMapper mapper)
         {
             _productValidator = productValidator;
             _context = context;
+            _mapper = mapper;
         }
         [HttpGet]
         public IActionResult GetProducts()
@@ -72,6 +77,20 @@ namespace ApiProject.WebAPI.Controllers
             _context.Products.Update(product);
             _context.SaveChanges();
             return Ok(new { message = "Product is updated   ", data = product });
+        }
+        [HttpPost("CreateWithCategory")]
+        public IActionResult CreateProductWithCategory(CreateProductDto createProductDto)
+        {
+            var value = _mapper.Map<Product>(createProductDto);
+            _context.Products.Add(value);
+            _context.SaveChanges();
+            return Ok(new { message = "Product is added", data = value });
+        }
+        [HttpGet("GetProductWithCategory")]
+        public IActionResult GetProductWithCategory()
+        {
+            var products = _context.Products.Include(x => x.Category).ToList();
+            return Ok(_mapper.Map<List<ResultProductWithCategory>>(products));
         }
     }
 }
